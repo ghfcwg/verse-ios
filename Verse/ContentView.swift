@@ -17,36 +17,95 @@ import SwiftUI
 
 struct ContentView: View {
     //@State private var dates = [Date]()
-    @ObservedObject public var fetcher = DBFetcher()
     @State private var searchStr: String = ""
+    @ObservedObject public var fetcher = DBFetcher()
     
     var body: some View {
-        NavigationView {
+
+                /*TextField("Search...", text: $searchStr, onEditingChanged: { (changed) in
+                 if changed {
+                 print("text edit has begun")
+                 } else {
+                 print("committed the change")
+                 self.fetcher.verseSearch(query: self.searchStr)
+                 }
+                 })
+                 .textFieldStyle(RoundedBorderTextFieldStyle())
+                 .padding()
+                 Button("Search",action: {self.fetcher.verseSearch(query: self.searchStr)}
+                 )*/
+        VStack(alignment: .center, spacing: 0) {
+            HStack {
+                SearchBar(text: self.$searchStr, placeholder: "Search...",
+                          prompt: "Enter speech search terms:",
+                          fetcher: self.fetcher/*
+                                print("committed the change")
+                                self.fetcher.verseSearch(query: self.searchStr)
+ */)
+                Button(action: { } ) {
+                        Text("Privacy")
+                        .foregroundColor(Color.blue)
+                }
+            }
+            NavigationView {
             MasterView(verses: fetcher.verses)
-                .navigationBarTitle(Text("Verse"))
-                .navigationBarItems(
-                    leading: TextField("Search...", text: $searchStr, onEditingChanged: { (changed) in
-                    if changed {
-                        print("text edit has begun")
-                    } else {
-                        print("committed the change")
-                        self.fetcher.verseSearch(query: self.searchStr)
-                        }
-                    })
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .padding() /*,
-                    trailing: Button(
-                        action: {
-                            withAnimation { self.dates.insert(Date(), at: 0) }
-                        }
-                    ) {
-                        Image(systemName: "plus")
-                    }*/
-                )
+                .navigationBarTitle(Text("Verses"))
             DetailView(ver: VerseModel(id: "", content: "", title: "", reference: "", url: "", rating: 0))
+                
+            }
         }.navigationViewStyle(DoubleColumnNavigationViewStyle())
     }
 }
+
+struct SearchBar: UIViewRepresentable {
+
+    @Binding var text: String
+    var placeholder: String
+    var prompt: String?
+    var fetcher: DBFetcher
+
+    class Coordinator: NSObject, UISearchBarDelegate {
+
+        @Binding var text: String
+        var placeholder: String
+        var prompt: String?
+        var fetcher: DBFetcher
+
+        init(text: Binding<String>, placeholder: String, prompt: String?, fetcher: DBFetcher) {
+            _text = text
+            self.placeholder = placeholder
+            self.prompt = prompt
+            self.fetcher = fetcher
+        }
+
+        func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+            text = searchText
+        }
+        
+        func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+            print("textbox finished editing")
+            self.fetcher.verseSearch(query: text)
+        }
+    }
+
+    func makeCoordinator() -> Coordinator {
+        return Coordinator(text: $text, placeholder: self.placeholder, prompt: self.prompt, fetcher: self.fetcher)
+    }
+
+    func makeUIView(context: UIViewRepresentableContext<SearchBar>) -> UISearchBar {
+        let searchBar = UISearchBar(frame: .zero)
+        searchBar.delegate = context.coordinator
+        searchBar.placeholder = context.coordinator.placeholder
+        searchBar.prompt = context.coordinator.prompt
+        return searchBar
+    }
+
+    func updateUIView(_ uiView: UISearchBar,
+                      context: UIViewRepresentableContext<SearchBar>) {
+        uiView.text = text
+    }
+}
+
 /*
 struct NavView: View {
     @ObservedObject var fetcher = DBFetcher()
@@ -90,7 +149,7 @@ struct MasterView: View {
                             .lineLimit(2)
                         Text(verse.content)
                             .lineLimit(10)
-                        Spacer()
+                            .padding(.top)
                     }
                 }
             /*}.onDelete { indices in
